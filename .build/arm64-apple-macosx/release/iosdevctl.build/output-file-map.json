@@ -1,0 +1,79 @@
+{
+  "": {
+    "dependencies": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/iosdevctl.d",
+    "object": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/iosdevctl.o",
+    "swift-dependencies": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/master.swiftdeps"
+  },
+  "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/Sources/iosdevctl/Commands/AppCommands.swift": {
+    "object": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/AppCommands.swift.o",
+    "swiftmodule": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/AppCommands~partial.swiftmodule",
+    "swift-dependencies": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/AppCommands.swiftdeps",
+    "diagnostics": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/AppCommands.dia"
+  },
+  "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/Sources/iosdevctl/Commands/DeviceCommands.swift": {
+    "object": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/DeviceCommands.swift.o",
+    "swiftmodule": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/DeviceCommands~partial.swiftmodule",
+    "swift-dependencies": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/DeviceCommands.swiftdeps",
+    "diagnostics": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/DeviceCommands.dia"
+  },
+  "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/Sources/iosdevctl/Commands/PasteboardCommands.swift": {
+    "object": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/PasteboardCommands.swift.o",
+    "swiftmodule": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/PasteboardCommands~partial.swiftmodule",
+    "swift-dependencies": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/PasteboardCommands.swiftdeps",
+    "diagnostics": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/PasteboardCommands.dia"
+  },
+  "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/Sources/iosdevctl/Commands/PushCommands.swift": {
+    "object": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/PushCommands.swift.o",
+    "swiftmodule": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/PushCommands~partial.swiftmodule",
+    "swift-dependencies": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/PushCommands.swiftdeps",
+    "diagnostics": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/PushCommands.dia"
+  },
+  "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/Sources/iosdevctl/Commands/StatusBarCommands.swift": {
+    "object": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/StatusBarCommands.swift.o",
+    "swiftmodule": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/StatusBarCommands~partial.swiftmodule",
+    "swift-dependencies": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/StatusBarCommands.swiftdeps",
+    "diagnostics": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/StatusBarCommands.dia"
+  },
+  "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/Sources/iosdevctl/Commands/UICommands.swift": {
+    "object": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/UICommands.swift.o",
+    "swiftmodule": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/UICommands~partial.swiftmodule",
+    "swift-dependencies": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/UICommands.swiftdeps",
+    "diagnostics": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/UICommands.dia"
+  },
+  "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/Sources/iosdevctl/Commands/URLCommands.swift": {
+    "object": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/URLCommands.swift.o",
+    "swiftmodule": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/URLCommands~partial.swiftmodule",
+    "swift-dependencies": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/URLCommands.swiftdeps",
+    "diagnostics": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/URLCommands.dia"
+  },
+  "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/Sources/iosdevctl/Core/DeviceResolver.swift": {
+    "object": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/DeviceResolver.swift.o",
+    "swiftmodule": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/DeviceResolver~partial.swiftmodule",
+    "swift-dependencies": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/DeviceResolver.swiftdeps",
+    "diagnostics": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/DeviceResolver.dia"
+  },
+  "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/Sources/iosdevctl/Core/Output.swift": {
+    "object": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/Output.swift.o",
+    "swiftmodule": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/Output~partial.swiftmodule",
+    "swift-dependencies": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/Output.swiftdeps",
+    "diagnostics": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/Output.dia"
+  },
+  "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/Sources/iosdevctl/Core/Shell.swift": {
+    "object": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/Shell.swift.o",
+    "swiftmodule": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/Shell~partial.swiftmodule",
+    "swift-dependencies": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/Shell.swiftdeps",
+    "diagnostics": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/Shell.dia"
+  },
+  "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/Sources/iosdevctl/IOSDevCtl.swift": {
+    "object": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/IOSDevCtl.swift.o",
+    "swiftmodule": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/IOSDevCtl~partial.swiftmodule",
+    "swift-dependencies": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/IOSDevCtl.swiftdeps",
+    "diagnostics": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/IOSDevCtl.dia"
+  },
+  "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/Sources/iosdevctl/main.swift": {
+    "object": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/main.swift.o",
+    "swiftmodule": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/main~partial.swiftmodule",
+    "swift-dependencies": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/main.swiftdeps",
+    "diagnostics": "/Users/petrgaspar/.openclaw/workspace/repos/iosdevctl/.build/arm64-apple-macosx/release/iosdevctl.build/main.dia"
+  }
+}
