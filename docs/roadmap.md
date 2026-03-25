@@ -16,21 +16,20 @@ A clean, JSON-first replacement for Meta's abandoned `idb` Python client. Wraps 
 
 ---
 
-## Phase 2 — Touch & UI Interaction
+## Phase 2 — Touch & UI Interaction ✅
 
-*Status: Planned*
+*Status: Complete*
 
 Add reliable tap, swipe, and text input — the key gap that `xcrun simctl` alone doesn't cover.
 
-**Approach:** Connect to `idb_companion`'s gRPC API (already installed as a dependency) to relay touch events.
+**Approach:** Connects to `idb_companion`'s gRPC API to relay HID touch events. `idb_companion` is launched automatically as a background process if not already running.
 
-**Commands:**
+**Commands shipped:**
 - `ui tap <x> <y>` — Tap at coordinates
-- `ui swipe <x1> <y1> <x2> <y2>` — Swipe gesture
-- `ui type <text>` — Type text via keyboard simulation
-- `ui button <name>` — Press hardware button (home, lock, siri, volume-up, volume-down)
-- `ui long-press <x> <y>` — Long press at coordinates
-- `ui pinch <x> <y> <scale>` — Pinch gesture
+- `ui swipe <x1> <y1> <x2> <y2> [--duration]` — Swipe gesture (10-point interpolation)
+- `ui type <text>` — Type text via keyboard simulation (USB HID keycodes)
+- `ui button <name>` — Press hardware button (home, lock, siri, side, apple-pay)
+- `ui long-press <x> <y> [--duration]` — Long press at coordinates
 
 ---
 
