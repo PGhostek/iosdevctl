@@ -33,18 +33,19 @@ Add reliable tap, swipe, and text input — the key gap that `xcrun simctl` alon
 
 ---
 
-## Phase 3 — UI Inspection & Accessibility
+## Phase 3 — UI Inspection & Accessibility ✅
 
-*Status: Planned*
+*Status: Complete*
 
 Enable agents to understand what's on screen — not just capture screenshots, but query the full UI element hierarchy.
 
-**Commands:**
+**Approach:** Calls `idb_companion`'s `accessibility_info` gRPC RPC (same companion process used for Phase 2). The response JSON contains the full nested accessibility tree.
+
+**Commands shipped:**
 - `ui tree` — Full accessibility tree as JSON
-- `ui tree --query <text>` — Find elements matching visible text
-- `ui tree --type <type>` — Find elements by type (button, textField, etc.)
-- `ui element <id> tap` — Tap element by accessibility identifier (not coordinates)
-- `ui diff` — Detect whether the screen has changed since last check
+- `ui tree --query <text>` — Find elements matching visible text (label or value)
+- `ui tree --type <type>` — Find elements by type (Button, TextField, StaticText, etc.)
+- `ui element-tap <identifier>` — Tap element by accessibility identifier (no coordinates needed)
 
 **Why this matters for agents:** Coordinate-based tapping is fragile — it breaks when layouts shift. Accessibility-ID-based interaction is robust across device sizes and orientations.
 

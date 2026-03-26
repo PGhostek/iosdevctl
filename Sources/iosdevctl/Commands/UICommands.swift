@@ -4,13 +4,15 @@ import Foundation
 struct UICommand: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "ui",
-        abstract: "UI interaction commands — tap, swipe, type, button, long-press.",
+        abstract: "UI interaction and inspection commands.",
         subcommands: [
             UITap.self,
             UISwipe.self,
             UIType.self,
             UIButton.self,
-            UILongPress.self
+            UILongPress.self,
+            UITree.self,
+            UIElementTap.self
         ]
     )
 }
@@ -300,5 +302,221 @@ struct UILongPress: ParsableCommand {
             "device": sim.name,
             "udid": sim.udid
         ] as [String: Any], pretty: pretty)
+    }
+}
+
+// MARK: - UITree
+
+struct UITree: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "tree",
+        abstract: "Dump the accessibility element tree as JSON."
+    )
+
+    @Option(name: .long, help: "Filter elements whose label or value contains this text.")
+    var query: String?
+
+    @Option(name: .long, help: "Filter elements by type (e.g. Button, TextField, StaticText).")
+    var type: String?
+
+    @Option(name: .long, help: "Device UDID or name.")
+    var device: String?
+
+    @Flag(name: .long, help: "Pretty-print JSON output.")
+    var pretty: Bool = false
+
+    func run() throws {
+        let sim = DeviceResolver.resolve(identifier: device)
+        guard sim.isBooted else {
+            Output.error(
+                code: "DEVICE_NOT_BOOTED",
+                message: "Device '\(sim.name)' is not booted.",
+                suggestion: "Boot it with: iosdevctl device boot --device \"\(sim.name)\"",
+                exitCode: 4
+            )
+        }
+
+        let client = makeClient(udid: sim.udid)
+        let jsonString: String
+        do {
+            jsonString = try client.accessibilityInfo()
+        } catch {
+            Output.error(
+                code: "ACCESSIBILITY_FAILED",
+                message: "Failed to fetch accessibility tree: \(error.localizedDescription)"
+            )
+        }
+
+        // Parse the raw JSON from idb_companion.
+        guard let data = jsonString.data(using: .utf8),
+              let rawTree = try? JSONSerialization.jsonObject(with: data) else {
+            Output.error(
+                code: "ACCESSIBILITY_PARSE_FAILED",
+                message: "Could not parse accessibility tree JSON from idb_companion."
+            )
+        }
+
+        let filtered: Any
+        if query != nil || type != nil {
+            let elements = filterElements(rawTree, query: query, type: type)
+            filtered = elements
+        } else {
+            filtered = rawTree
+        }
+
+        Output.success([
+            "status": "ok",
+            "device": sim.name,
+            "udid": sim.udid,
+            "elements": filtered
+        ] as [String: Any], pretty: pretty)
+    }
+
+    /// Recursively collect elements matching the given query/type filters.
+    private func filterElements(_ node: Any, query: String?, type elementType: String?) -> [[String: Any]] {
+        var results: [[String: Any]] = []
+
+        func visit(_ obj: Any) {
+            if let dict = obj as? [String: Any] {
+                let label = (dict["AXLabel"] as? String) ?? ""
+                let value = (dict["AXValue"] as? String) ?? ""
+                let typeStr = (dict["type"] as? String) ?? ""
+
+                let matchesQuery = query.map { q in
+                    label.localizedCaseInsensitiveContains(q) ||
+                    value.localizedCaseInsensitiveContains(q)
+                } ?? true
+
+                let matchesType = elementType.map { t in
+                    typeStr.localizedCaseInsensitiveContains(t)
+                } ?? true
+
+                if matchesQuery && matchesType {
+                    results.append(dict)
+                }
+
+                if let children = dict["children"] as? [Any] {
+                    for child in children { visit(child) }
+                }
+            } else if let arr = obj as? [Any] {
+                for item in arr { visit(item) }
+            }
+        }
+
+        visit(node)
+        return results
+    }
+}
+
+// MARK: - UIElementTap
+
+struct UIElementTap: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "element-tap",
+        abstract: "Tap an element by its accessibility identifier."
+    )
+
+    @Argument(help: "Accessibility identifier of the element to tap.")
+    var identifier: String
+
+    @Option(name: .long, help: "Device UDID or name.")
+    var device: String?
+
+    @Flag(name: .long, help: "Pretty-print JSON output.")
+    var pretty: Bool = false
+
+    func run() throws {
+        let sim = DeviceResolver.resolve(identifier: device)
+        guard sim.isBooted else {
+            Output.error(
+                code: "DEVICE_NOT_BOOTED",
+                message: "Device '\(sim.name)' is not booted.",
+                suggestion: "Boot it with: iosdevctl device boot --device \"\(sim.name)\"",
+                exitCode: 4
+            )
+        }
+
+        let client = makeClient(udid: sim.udid)
+
+        // Fetch accessibility tree.
+        let jsonString: String
+        do {
+            jsonString = try client.accessibilityInfo()
+        } catch {
+            Output.error(
+                code: "ACCESSIBILITY_FAILED",
+                message: "Failed to fetch accessibility tree: \(error.localizedDescription)"
+            )
+        }
+
+        guard let data = jsonString.data(using: .utf8),
+              let rawTree = try? JSONSerialization.jsonObject(with: data) else {
+            Output.error(
+                code: "ACCESSIBILITY_PARSE_FAILED",
+                message: "Could not parse accessibility tree JSON from idb_companion."
+            )
+        }
+
+        // Find the element by identifier.
+        guard let element = findElement(rawTree, identifier: identifier) else {
+            Output.error(
+                code: "ELEMENT_NOT_FOUND",
+                message: "No element with identifier '\(identifier)' found on screen.",
+                suggestion: "Use 'iosdevctl ui tree' to list available elements.",
+                exitCode: 3
+            )
+        }
+
+        // Extract center of the element's frame.
+        guard let frame = element["frame"] as? [String: Any],
+              let fx = frame["x"] as? Double,
+              let fy = frame["y"] as? Double,
+              let fw = frame["width"] as? Double,
+              let fh = frame["height"] as? Double else {
+            Output.error(
+                code: "ELEMENT_NO_FRAME",
+                message: "Element '\(identifier)' has no usable frame."
+            )
+        }
+
+        let cx = fx + fw / 2
+        let cy = fy + fh / 2
+
+        do {
+            try client.tap(x: cx, y: cy)
+        } catch {
+            Output.error(
+                code: "TAP_FAILED",
+                message: "Tap on element '\(identifier)' failed: \(error.localizedDescription)"
+            )
+        }
+
+        Output.success([
+            "status": "ok",
+            "message": "Tapped element.",
+            "identifier": identifier,
+            "x": cx,
+            "y": cy,
+            "device": sim.name,
+            "udid": sim.udid
+        ] as [String: Any], pretty: pretty)
+    }
+
+    /// Recursively find the first element whose AXUniqueId matches.
+    private func findElement(_ node: Any, identifier: String) -> [String: Any]? {
+        if let dict = node as? [String: Any] {
+            let id = (dict["AXUniqueId"] as? String) ?? ""
+            if id == identifier { return dict }
+            if let children = dict["children"] as? [Any] {
+                for child in children {
+                    if let found = findElement(child, identifier: identifier) { return found }
+                }
+            }
+        } else if let arr = node as? [Any] {
+            for item in arr {
+                if let found = findElement(item, identifier: identifier) { return found }
+            }
+        }
+        return nil
     }
 }

@@ -1,5 +1,5 @@
 // DO NOT EDIT.
-// Pre-generated from idb proto definitions — CompanionService HID subset only.
+// Pre-generated from idb proto definitions — CompanionService HID + Accessibility subset.
 // Source: https://github.com/facebook/idb/blob/main/proto/idb.proto
 
 import Foundation
@@ -9,7 +9,7 @@ import SwiftProtobuf
 
 // MARK: - CompanionService client protocol
 
-/// Client-facing protocol for the idb CompanionService (HID subset).
+/// Client-facing protocol for the idb CompanionService (HID + Accessibility subset).
 protocol Idb_CompanionServiceClientProtocol: GRPCClient {
     var serviceName: String { get }
     var interceptors: Idb_CompanionServiceClientInterceptorFactoryProtocol? { get }
@@ -17,6 +17,11 @@ protocol Idb_CompanionServiceClientProtocol: GRPCClient {
     func hid(
         callOptions: CallOptions?
     ) -> ClientStreamingCall<Idb_HIDEvent, Idb_HIDResponse>
+
+    func accessibilityInfo(
+        _ request: Idb_AccessibilityInfoRequest,
+        callOptions: CallOptions?
+    ) -> UnaryCall<Idb_AccessibilityInfoRequest, Idb_AccessibilityInfoResponse>
 }
 
 extension Idb_CompanionServiceClientProtocol {
@@ -30,12 +35,26 @@ extension Idb_CompanionServiceClientProtocol {
             interceptors: interceptors?.makeHidInterceptors() ?? []
         )
     }
+
+    /// Queries the accessibility tree for the current screen (or element at a point).
+    func accessibilityInfo(
+        _ request: Idb_AccessibilityInfoRequest,
+        callOptions: CallOptions? = nil
+    ) -> UnaryCall<Idb_AccessibilityInfoRequest, Idb_AccessibilityInfoResponse> {
+        return makeUnaryCall(
+            path: "/idb.CompanionService/accessibility_info",
+            request: request,
+            callOptions: callOptions ?? defaultCallOptions,
+            interceptors: interceptors?.makeAccessibilityInfoInterceptors() ?? []
+        )
+    }
 }
 
 // MARK: - Interceptor factory protocol
 
 protocol Idb_CompanionServiceClientInterceptorFactoryProtocol: Sendable {
     func makeHidInterceptors() -> [ClientInterceptor<Idb_HIDEvent, Idb_HIDResponse>]
+    func makeAccessibilityInfoInterceptors() -> [ClientInterceptor<Idb_AccessibilityInfoRequest, Idb_AccessibilityInfoResponse>]
 }
 
 // MARK: - Concrete client

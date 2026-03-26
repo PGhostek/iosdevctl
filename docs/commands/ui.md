@@ -1,8 +1,8 @@
 # ui
 
-UI interaction commands — tap, swipe, type text, press hardware buttons, and long-press.
+UI interaction and inspection commands — tap, swipe, type text, press hardware buttons, long-press, and accessibility tree queries.
 
-All commands connect to `idb_companion`'s gRPC API to inject touch and keyboard events into the simulator. `idb_companion` is managed automatically — it starts if not running, and restarts if running for a different UDID.
+All commands connect to `idb_companion`'s gRPC API. `idb_companion` is managed automatically — it starts if not running, and restarts if running for a different UDID.
 
 ## Subcommands
 
@@ -13,6 +13,8 @@ All commands connect to `idb_companion`'s gRPC API to inject touch and keyboard 
 | [`ui type`](#ui-type) | Type text via keyboard |
 | [`ui button`](#ui-button) | Press a hardware button |
 | [`ui long-press`](#ui-long-press) | Long-press at coordinates |
+| [`ui tree`](#ui-tree) | Dump the accessibility element tree |
+| [`ui element-tap`](#ui-element-tap) | Tap an element by accessibility identifier |
 
 ---
 
@@ -216,6 +218,98 @@ iosdevctl ui long-press 195 422 --duration 1.5
 
 ---
 
+---
+
+## ui tree
+
+Dump the full accessibility element tree for the current screen as JSON. Use `--query` or `--type` to filter the results.
+
+```
+iosdevctl ui tree [--query <text>] [--type <type>] [--device <udid-or-name>] [--pretty]
+```
+
+### Options
+
+| Option | Description |
+|---|---|
+| `--query` | Return only elements whose label or value contains this text (case-insensitive) |
+| `--type` | Return only elements matching this type (e.g. `Button`, `TextField`, `StaticText`) |
+
+### Examples
+
+```bash
+# Full tree
+iosdevctl ui tree --pretty
+
+# Find all buttons
+iosdevctl ui tree --type Button --pretty
+
+# Find elements mentioning "Login"
+iosdevctl ui tree --query "Login" --pretty
+```
+
+```json
+{
+  "status": "ok",
+  "device": "iPhone 16 Pro",
+  "udid": "A07C8D70-4443-4C52-8270-F1228996DA09",
+  "elements": [
+    {
+      "type": "Button",
+      "label": "Login",
+      "value": "",
+      "identifier": "loginButton",
+      "frame": {"x": 100, "y": 400, "width": 190, "height": 44},
+      "enabled": true,
+      "focused": false,
+      "children": []
+    }
+  ]
+}
+```
+
+---
+
+## ui element-tap
+
+Tap an element by its accessibility identifier. Fetches the accessibility tree, finds the element, and taps its center — no coordinates needed.
+
+```
+iosdevctl ui element-tap <identifier> [--device <udid-or-name>] [--pretty]
+```
+
+### Arguments
+
+| Argument | Description |
+|---|---|
+| `identifier` | The `AXUniqueId` value from `ui tree` output |
+
+### Example
+
+```bash
+iosdevctl ui element-tap loginButton
+```
+
+```json
+{
+  "status": "ok",
+  "message": "Tapped element.",
+  "identifier": "loginButton",
+  "x": 195,
+  "y": 422,
+  "device": "iPhone 16 Pro",
+  "udid": "A07C8D70-4443-4C52-8270-F1228996DA09"
+}
+```
+
+### Notes
+
+- Use `iosdevctl ui tree` to discover available identifiers.
+- The element must be visible on screen when the command runs.
+- Falls back to exit code 3 (`ELEMENT_NOT_FOUND`) if the identifier is not present.
+
+---
+
 ## Error codes
 
 | Code | Meaning |
@@ -228,3 +322,7 @@ iosdevctl ui long-press 195 422 --duration 1.5
 | `TYPE_FAILED` | gRPC call failed for type. |
 | `BUTTON_FAILED` | gRPC call failed for button press. |
 | `LONG_PRESS_FAILED` | gRPC call failed for long press. |
+| `ACCESSIBILITY_FAILED` | gRPC call to `accessibility_info` failed. |
+| `ACCESSIBILITY_PARSE_FAILED` | Could not parse the JSON returned by `idb_companion`. |
+| `ELEMENT_NOT_FOUND` | No element with the given identifier found on screen. |
+| `ELEMENT_NO_FRAME` | Element found but has no usable frame (can't calculate tap coordinates). |
