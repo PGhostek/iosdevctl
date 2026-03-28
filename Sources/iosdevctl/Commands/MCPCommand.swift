@@ -349,6 +349,75 @@ private final class MCPServer {
                 return args
             }
         ),
+        // agent tap-text
+        ToolDef(
+            name: "agent_tap_text",
+            description: "Tap the first element whose label or value matches text — no coordinates needed. Preferred over ui_tap when you can identify the element by its visible text.",
+            inputSchema: [
+                "type": "object",
+                "properties": [
+                    "text": ["type": "string", "description": "Text to match against element labels/values (case-insensitive)."],
+                    "type": ["type": "string", "description": "Optionally restrict to a specific element type (e.g. Button)."],
+                    "device": ["type": "string"]
+                ] as [String: Any],
+                "required": ["text"]
+            ],
+            buildArgs: { p in
+                var args = ["agent", "tap-text", "--pretty"]
+                if let t = p["text"] as? String { args.insert(t, at: 2) }
+                if let ty = p["type"] as? String { args += ["--type", ty] }
+                if let d = p["device"] as? String { args += ["--device", d] }
+                return args
+            }
+        ),
+        // agent wait-for
+        ToolDef(
+            name: "agent_wait_for",
+            description: "Block until an element matching text appears on screen. Use after navigation or actions that trigger async UI changes.",
+            inputSchema: [
+                "type": "object",
+                "properties": [
+                    "text": ["type": "string", "description": "Text to wait for (case-insensitive)."],
+                    "timeout": ["type": "number", "description": "Max seconds to wait (default: 10)."],
+                    "interval": ["type": "number", "description": "Poll interval in seconds (default: 0.5)."],
+                    "type": ["type": "string", "description": "Optionally restrict to a specific element type."],
+                    "device": ["type": "string"]
+                ] as [String: Any],
+                "required": ["text"]
+            ],
+            buildArgs: { p in
+                var args = ["agent", "wait-for", "--pretty"]
+                if let t = p["text"] as? String { args.insert(t, at: 2) }
+                if let to = p["timeout"] { args += ["--timeout", "\(to)"] }
+                if let iv = p["interval"] { args += ["--interval", "\(iv)"] }
+                if let ty = p["type"] as? String { args += ["--type", ty] }
+                if let d = p["device"] as? String { args += ["--device", d] }
+                return args
+            }
+        ),
+        // agent context
+        ToolDef(
+            name: "agent_context",
+            description: "Return screenshot path + full accessibility tree in one call. Best first step for an agent that needs to understand the current screen before acting.",
+            inputSchema: [
+                "type": "object",
+                "properties": [
+                    "output": ["type": "string", "description": "Screenshot output path (default: auto-generated in /tmp)."],
+                    "query": ["type": "string", "description": "Filter tree elements by label/value text."],
+                    "type": ["type": "string", "description": "Filter tree elements by element type."],
+                    "device": ["type": "string"]
+                ] as [String: Any],
+                "required": [] as [String]
+            ],
+            buildArgs: { p in
+                var args = ["agent", "context", "--pretty"]
+                if let o = p["output"] as? String { args += ["--output", o] }
+                if let q = p["query"] as? String { args += ["--query", q] }
+                if let t = p["type"] as? String { args += ["--type", t] }
+                if let d = p["device"] as? String { args += ["--device", d] }
+                return args
+            }
+        ),
     ]
 
     private var toolsByName: [String: ToolDef] = [:]
