@@ -73,7 +73,7 @@ final class IDBClient {
     }
 
     private static func runningCompanionUDID() -> String? {
-        let result = runCommand(["pgrep", "-a", "-l", "idb_companion"])
+        let result = runCommand(["pgrep", "-fl", "idb_companion"])
         guard result.succeeded else { return nil }
         let line = result.stdout
         guard line.contains("--udid") else { return nil }
@@ -94,7 +94,7 @@ final class IDBClient {
     private static func ensureCompanion(udid: String) throws {
         if isCompanionRunning() {
             let running = runningCompanionUDID()
-            if running == nil || running == udid {
+            if running == udid {
                 return
             }
             killExistingCompanion()

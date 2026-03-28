@@ -96,7 +96,7 @@ docs/
 |---|---|---|
 | Phase 1 | ✅ Complete | Core CLI — device, app, push, url, pasteboard, status-bar |
 | Phase 2 | ✅ Complete | Touch & UI interaction (tap, swipe, type, long-press) via idb_companion gRPC |
-| Phase 3 | Planned | UI inspection — accessibility tree, element-based tapping |
+| Phase 3 | ✅ Complete | UI inspection — accessibility tree, element-based tapping |
 | Phase 4 | Planned | MCP server wrapping the CLI |
 | Phase 5 | Planned | Agent-optimized features (ui context, tap-text, wait-for) |
 
