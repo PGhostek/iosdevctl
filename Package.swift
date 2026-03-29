@@ -29,6 +29,10 @@ let package = Package(
                 .product(name: "SwiftProtobuf", package: "swift-protobuf")
             ],
             path: "Sources/iosdevctl"
+        ),
+        .testTarget(
+            name: "iosdevctlTests",
+            path: "Tests/iosdevctlTests"
         )
     ]
 )
