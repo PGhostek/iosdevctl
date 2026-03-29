@@ -64,6 +64,7 @@ iosdevctl url open "myapp://home"
 | [`pasteboard`](commands/pasteboard.md) | Get and set clipboard content | Phase 1 |
 | [`status-bar`](commands/status-bar.md) | Override status bar for screenshots | Phase 1 |
 | [`mcp`](commands/mcp.md) | MCP server for Claude Desktop and other AI tools | Phase 4 |
+| [`agent`](commands/agent.md) | Agent-optimized: tap-text, wait-for, context | Phase 5 |
 
 ## Concepts
 

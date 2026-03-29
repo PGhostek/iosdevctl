@@ -81,19 +81,20 @@ See [commands/mcp.md](commands/mcp.md) for full reference.
 
 ---
 
-## Phase 5 — Agent-Optimized Features
+## Phase 5 — Agent-Optimized Features ✅
 
-*Status: Planned*
+*Status: Complete*
 
-Features designed specifically for AI agents — things a human would rarely need but an LLM benefits from greatly.
+Commands designed specifically for AI agents — things a human would rarely need but an LLM benefits from greatly. Each collapses multiple round-trips into a single call.
 
-**Commands:**
-- `ui context` — Single call returning screenshot path + accessibility tree (reduces round trips for agents)
-- `ui tap-text <text>` — Find element by visible text and tap it (no coordinates needed)
-- `ui wait-for --text <text> [--timeout <seconds>]` — Block until element appears
-- `ui wait-for --gone --text <text>` — Block until element disappears
-- `session start / stop` — Track and replay a sequence of interactions
-- `device hash` — Fast hash of current screen state (detect changes without full screenshot)
+**Commands shipped:**
+- `agent tap-text <text>` — Find element by visible label and tap it (no coordinates needed)
+- `agent wait-for <text> [--timeout] [--interval]` — Poll accessibility tree until element appears
+- `agent context [--query] [--type]` — Screenshot + accessibility tree in one call
+
+**Also exposed as MCP tools:** `agent_tap_text`, `agent_wait_for`, `agent_context` (total: 20 MCP tools)
+
+See [commands/agent.md](commands/agent.md) for full reference.
 
 ---
 

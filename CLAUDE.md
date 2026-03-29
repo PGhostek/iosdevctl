@@ -98,7 +98,7 @@ docs/
 | Phase 2 | ✅ Complete | Touch & UI interaction (tap, swipe, type, long-press) via idb_companion gRPC |
 | Phase 3 | ✅ Complete | UI inspection — accessibility tree, element-based tapping |
 | Phase 4 | ✅ Complete | MCP server wrapping the CLI (17 tools, iosdevctl mcp serve) |
-| Phase 5 | Planned | Agent-optimized features (ui context, tap-text, wait-for) |
+| Phase 5 | ✅ Complete | Agent-optimized features (agent tap-text, wait-for, context) |
 
 ## Phase 2 Implementation Notes
 
