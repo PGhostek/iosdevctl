@@ -63,6 +63,7 @@ iosdevctl url open "myapp://home"
 | [`url`](commands/url.md) | Open URLs and deep links | Phase 1 |
 | [`pasteboard`](commands/pasteboard.md) | Get and set clipboard content | Phase 1 |
 | [`status-bar`](commands/status-bar.md) | Override status bar for screenshots | Phase 1 |
+| [`mcp`](commands/mcp.md) | MCP server for Claude Desktop and other AI tools | Phase 4 |
 
 ## Concepts
 
