@@ -27,6 +27,9 @@ struct AgentTapText: ParsableCommand {
     @Option(name: .long, help: "Filter to a specific element type (e.g. Button).")
     var type: String?
 
+    @Flag(name: .long, help: "Require exact label match (prevents 'Male' matching 'Female').")
+    var exact: Bool = false
+
     @Option(name: .long, help: "Device UDID or name.")
     var device: String?
 
@@ -64,7 +67,7 @@ struct AgentTapText: ParsableCommand {
             )
         }
 
-        guard let element = findByText(rawTree, text: text, type: type) else {
+        guard let element = findByText(rawTree, text: text, type: type, exact: exact) else {
             Output.error(
                 code: "ELEMENT_NOT_FOUND",
                 message: "No element with text '\(text)' found on screen.",
@@ -110,14 +113,20 @@ struct AgentTapText: ParsableCommand {
 
     /// Find the first element whose AXLabel or AXValue contains the text,
     /// optionally filtered by element type.
-    private func findByText(_ node: Any, text: String, type elementType: String?) -> [String: Any]? {
+    private func findByText(_ node: Any, text: String, type elementType: String?, exact: Bool = false) -> [String: Any]? {
         if let dict = node as? [String: Any] {
             let label = (dict["AXLabel"] as? String) ?? ""
             let value = (dict["AXValue"] as? String) ?? ""
             let typeStr = (dict["type"] as? String) ?? ""
 
-            let matchesText = label.localizedCaseInsensitiveContains(text) ||
+            let matchesText: Bool
+            if exact {
+                matchesText = label.caseInsensitiveCompare(text) == .orderedSame ||
+                              value.caseInsensitiveCompare(text) == .orderedSame
+            } else {
+                matchesText = label.localizedCaseInsensitiveContains(text) ||
                               value.localizedCaseInsensitiveContains(text)
+            }
             let matchesType = elementType.map { typeStr.localizedCaseInsensitiveContains($0) } ?? true
 
             if matchesText && matchesType {
