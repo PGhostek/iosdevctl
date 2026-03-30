@@ -129,7 +129,7 @@ private final class MCPServer {
             ],
             buildArgs: { p in
                 var args = ["app", "launch", "--pretty"]
-                if let b = p["bundle_id"] as? String { args += ["--bundle-id", b] }
+                if let b = p["bundle_id"] as? String { args.insert(b, at: 2) }
                 if let d = p["device"] as? String { args += ["--device", d] }
                 return args
             }
@@ -148,7 +148,7 @@ private final class MCPServer {
             ],
             buildArgs: { p in
                 var args = ["app", "terminate", "--pretty"]
-                if let b = p["bundle_id"] as? String { args += ["--bundle-id", b] }
+                if let b = p["bundle_id"] as? String { args.insert(b, at: 2) }
                 if let d = p["device"] as? String { args += ["--device", d] }
                 return args
             }

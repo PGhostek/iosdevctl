@@ -101,6 +101,20 @@ final class MCPServerTests: XCTestCase {
         XCTAssertEqual(error["code"] as? Int, -32602)
     }
 
+    func test_toolsCall_appLaunch_passesBundleIdAsPositionalArg() {
+        // Regression: bundle_id was incorrectly passed as --bundle-id flag (doesn't exist).
+        // It must be a positional argument: app launch <bundleId>
+        let result = mcpRequest("""
+            {"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"app_launch","arguments":{"bundle_id":"com.apple.Preferences"}}}
+            """)
+        guard let res = result.jsonDict?["result"] as? [String: Any],
+              let text = (res["content"] as? [[String: Any]])?.first?["text"] as? String else {
+            return XCTFail("Expected result with content")
+        }
+        // Should not contain the argument-parser error about unknown --bundle-id flag
+        XCTAssertFalse(text.contains("--bundle-id"), "bundle_id must be passed as positional arg, not --bundle-id flag")
+    }
+
     func test_toolsCall_unknownDeviceName_isErrorTrue() {
         let result = mcpRequest("""
             {"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"device_boot","arguments":{"device":"NoSuchDevice-XYZ"}}}
