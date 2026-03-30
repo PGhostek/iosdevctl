@@ -135,12 +135,12 @@ struct AgentTapText: ParsableCommand {
 
             if let children = dict["children"] as? [Any] {
                 for child in children {
-                    if let found = findByText(child, text: text, type: elementType) { return found }
+                    if let found = findByText(child, text: text, type: elementType, exact: exact) { return found }
                 }
             }
         } else if let arr = node as? [Any] {
             for item in arr {
-                if let found = findByText(item, text: text, type: elementType) { return found }
+                if let found = findByText(item, text: text, type: elementType, exact: exact) { return found }
             }
         }
         return nil
