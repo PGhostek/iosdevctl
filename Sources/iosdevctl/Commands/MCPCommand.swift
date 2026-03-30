@@ -98,6 +98,42 @@ private final class MCPServer {
                 return args
             }
         ),
+        // device record start
+        ToolDef(
+            name: "device_record_start",
+            description: "Start recording the simulator screen to a video file. Call device_record_stop when done. Output path is optional — defaults to /tmp/iosdevctl-recording-<timestamp>.mp4.",
+            inputSchema: [
+                "type": "object",
+                "properties": [
+                    "output": ["type": "string", "description": "Output file path (MP4). Optional — auto-generated in /tmp if omitted."],
+                    "device": ["type": "string", "description": "Device UDID or name."]
+                ] as [String: Any],
+                "required": [] as [String]
+            ],
+            buildArgs: { p in
+                let output = (p["output"] as? String) ?? "/tmp/iosdevctl-recording-\(Int(Date().timeIntervalSince1970)).mp4"
+                var args = ["device", "record", "start", "--output", output, "--pretty"]
+                if let d = p["device"] as? String { args += ["--device", d] }
+                return args
+            }
+        ),
+        // device record stop
+        ToolDef(
+            name: "device_record_stop",
+            description: "Stop the current screen recording and finalize the video file. Returns the path of the saved recording.",
+            inputSchema: [
+                "type": "object",
+                "properties": [
+                    "device": ["type": "string", "description": "Device UDID or name."]
+                ] as [String: Any],
+                "required": [] as [String]
+            ],
+            buildArgs: { p in
+                var args = ["device", "record", "stop", "--pretty"]
+                if let d = p["device"] as? String { args += ["--device", d] }
+                return args
+            }
+        ),
         // app list
         ToolDef(
             name: "app_list",
