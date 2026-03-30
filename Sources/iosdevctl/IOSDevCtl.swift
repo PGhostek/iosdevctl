@@ -13,7 +13,8 @@ struct IOSDevCtl: ParsableCommand {
             PushCommand.self,
             URLCommand.self,
             PasteboardCommand.self,
-            StatusBarCommand.self
+            StatusBarCommand.self,
+            MCPCommand.self
         ]
     )
 }

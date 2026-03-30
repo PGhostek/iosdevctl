@@ -51,30 +51,33 @@ Enable agents to understand what's on screen — not just capture screenshots, b
 
 ---
 
-## Phase 4 — MCP Server
+## Phase 4 — MCP Server ✅
 
-*Status: Planned*
+*Status: Complete*
 
-A thin MCP (Model Context Protocol) server wrapping the `iosdevctl` CLI for use with Claude Desktop, Cursor, and other MCP-compatible tools.
+A thin MCP (Model Context Protocol) JSON-RPC 2.0 server over stdin/stdout. Allows Claude Desktop, Cursor, and any MCP-compatible client to call all `iosdevctl` capabilities as native tools without shelling out manually.
 
-**MCP Tools (mirrors CLI commands):**
+**Approach:** Each `tools/call` re-invokes the `iosdevctl` binary itself — zero code duplication, all existing error handling reused.
+
+**17 tools shipped:**
 - `device_list`, `device_boot`, `device_shutdown`, `device_screenshot`
-- `app_install`, `app_launch`, `app_terminate`, `app_list`
-- `ui_tap`, `ui_swipe`, `ui_type`, `ui_tree`, `ui_element_tap`
-- `push_send`, `url_open`, `pasteboard_get`, `pasteboard_set`
-
-**Distribution:** npm package (`npm install -g @iosdevctl/mcp`)
+- `app_list`, `app_launch`, `app_terminate`
+- `ui_tap`, `ui_swipe`, `ui_type`, `ui_long_press`, `ui_tree`, `ui_element_tap`, `ui_button`
+- `pasteboard_get`, `pasteboard_set`, `url_open`
 
 **Config example for Claude Desktop:**
 ```json
 {
   "mcpServers": {
     "iosdevctl": {
-      "command": "iosdevctl-mcp"
+      "command": "/usr/local/bin/iosdevctl",
+      "args": ["mcp", "serve"]
     }
   }
 }
 ```
+
+See [commands/mcp.md](commands/mcp.md) for full reference.
 
 ---
 
