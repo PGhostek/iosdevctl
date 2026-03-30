@@ -14,6 +14,7 @@ struct IOSDevCtl: ParsableCommand {
             URLCommand.self,
             PasteboardCommand.self,
             StatusBarCommand.self,
+            AgentCommand.self,
             MCPCommand.self
         ]
     )
