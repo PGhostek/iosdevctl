@@ -247,6 +247,16 @@ final class IDBClient {
         try sendEvents(events)
     }
 
+    func pressKey(keycode: UInt64) throws {
+        IDBClient.activateSimulator()
+        let action = keyAction(keycode: keycode)
+        let events = [
+            makePressEvent(action: action, direction: .down),
+            makePressEvent(action: action, direction: .up)
+        ]
+        try sendEvents(events)
+    }
+
     func pressButton(_ buttonType: HIDButtonType) throws {
         IDBClient.activateSimulator()
         let action = buttonAction(buttonType)

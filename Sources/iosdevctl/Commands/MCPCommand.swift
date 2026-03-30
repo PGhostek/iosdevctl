@@ -236,11 +236,12 @@ private final class MCPServer {
         // ui type
         ToolDef(
             name: "ui_type",
-            description: "Type text into the focused field.",
+            description: "Type text into the focused field. Use paste=true for non-ASCII text or when the simulator has a non-QWERTY keyboard layout — it sets the text via pasteboard and sends Cmd+V, bypassing HID keycodes entirely.",
             inputSchema: [
                 "type": "object",
                 "properties": [
                     "text": ["type": "string", "description": "Text to type."],
+                    "paste": ["type": "boolean", "description": "Use pasteboard+Cmd+V instead of HID keystrokes. Bypasses keyboard layout. Default: false."],
                     "device": ["type": "string"]
                 ] as [String: Any],
                 "required": ["text"]
@@ -248,6 +249,26 @@ private final class MCPServer {
             buildArgs: { p in
                 var args = ["ui", "type", "--pretty"]
                 if let t = p["text"] as? String { args.insert(t, at: 2) }
+                if (p["paste"] as? Bool) == true { args += ["--paste"] }
+                if let d = p["device"] as? String { args += ["--device", d] }
+                return args
+            }
+        ),
+        // ui key
+        ToolDef(
+            name: "ui_key",
+            description: "Press a named key: return, escape, delete, tab. Use 'return' to dismiss the keyboard or submit a form.",
+            inputSchema: [
+                "type": "object",
+                "properties": [
+                    "name": ["type": "string", "description": "Key name: return, escape, delete, tab."],
+                    "device": ["type": "string"]
+                ] as [String: Any],
+                "required": ["name"]
+            ],
+            buildArgs: { p in
+                var args = ["ui", "key", "--pretty"]
+                if let n = p["name"] as? String { args.insert(n, at: 2) }
                 if let d = p["device"] as? String { args += ["--device", d] }
                 return args
             }
@@ -388,12 +409,13 @@ private final class MCPServer {
         // agent tap-text
         ToolDef(
             name: "agent_tap_text",
-            description: "Tap the first element whose label or value matches text — no coordinates needed. Preferred over ui_tap when you can identify the element by its visible text.",
+            description: "Tap the first element whose label or value matches text — no coordinates needed. Use exact=true to prevent substring matches (e.g. 'Male' matching 'Female'). Use type to scope to a specific element kind (e.g. 'Button', 'TabBarItem').",
             inputSchema: [
                 "type": "object",
                 "properties": [
                     "text": ["type": "string", "description": "Text to match against element labels/values (case-insensitive)."],
-                    "type": ["type": "string", "description": "Optionally restrict to a specific element type (e.g. Button)."],
+                    "type": ["type": "string", "description": "Optionally restrict to a specific element type (e.g. Button, TabBarItem)."],
+                    "exact": ["type": "boolean", "description": "Require exact label match. Default: false (substring)."],
                     "device": ["type": "string"]
                 ] as [String: Any],
                 "required": ["text"]
@@ -402,6 +424,7 @@ private final class MCPServer {
                 var args = ["agent", "tap-text", "--pretty"]
                 if let t = p["text"] as? String { args.insert(t, at: 2) }
                 if let ty = p["type"] as? String { args += ["--type", ty] }
+                if (p["exact"] as? Bool) == true { args += ["--exact"] }
                 if let d = p["device"] as? String { args += ["--device", d] }
                 return args
             }

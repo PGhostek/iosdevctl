@@ -39,7 +39,7 @@ final class MCPServerTests: XCTestCase {
               let tools = res["tools"] as? [[String: Any]] else {
             return XCTFail("Expected tools array, got: \(result.stdout)")
         }
-        XCTAssertEqual(tools.count, 22, "Expected 22 tools (17 core + 3 agent + 2 recording)")
+        XCTAssertEqual(tools.count, 23, "Expected 23 tools (17 core + 1 ui_key + 3 agent + 2 recording)")
     }
 
     func test_toolsList_allToolsHaveRequiredFields() {
@@ -68,7 +68,7 @@ final class MCPServerTests: XCTestCase {
             "device_list", "device_boot", "device_shutdown", "device_screenshot",
             "device_record_start", "device_record_stop",
             "app_list", "app_launch", "app_terminate",
-            "ui_tap", "ui_swipe", "ui_type", "ui_long_press",
+            "ui_tap", "ui_swipe", "ui_type", "ui_key", "ui_long_press",
             "ui_tree", "ui_element_tap", "ui_button",
             "pasteboard_get", "pasteboard_set", "url_open",
             "agent_tap_text", "agent_wait_for", "agent_context"

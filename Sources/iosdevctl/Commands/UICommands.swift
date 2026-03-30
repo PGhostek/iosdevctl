@@ -9,6 +9,7 @@ struct UICommand: ParsableCommand {
             UITap.self,
             UISwipe.self,
             UIType.self,
+            UIKey.self,
             UIButton.self,
             UILongPress.self,
             UITree.self,
@@ -156,6 +157,9 @@ struct UIType: ParsableCommand {
     @Argument(help: "Text to type.")
     var text: String
 
+    @Flag(name: .long, help: "Set text via pasteboard and paste (Cmd+V) — bypasses keyboard layout and autocorrect.")
+    var paste: Bool = false
+
     @Option(name: .long, help: "Device UDID or name.")
     var device: String?
 
@@ -173,20 +177,101 @@ struct UIType: ParsableCommand {
             )
         }
 
-        let client = makeClient(udid: sim.udid)
-        do {
-            try client.type(text)
-        } catch {
-            Output.error(
-                code: "TYPE_FAILED",
-                message: "Type failed: \(error.localizedDescription)"
-            )
+        if paste {
+            // Write text to simulator pasteboard then send Cmd+V via System Events.
+            // Bypasses HID keycode table and keyboard layout entirely.
+            let pbcopy = Process()
+            pbcopy.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
+            pbcopy.arguments = ["simctl", "pbcopy", sim.udid]
+            let stdinPipe = Pipe()
+            pbcopy.standardInput = stdinPipe
+            pbcopy.standardOutput = FileHandle.nullDevice
+            pbcopy.standardError = FileHandle.nullDevice
+            do {
+                try pbcopy.run()
+                stdinPipe.fileHandleForWriting.write(text.data(using: .utf8)!)
+                stdinPipe.fileHandleForWriting.closeFile()
+                pbcopy.waitUntilExit()
+            } catch {
+                Output.error(code: "TYPE_FAILED", message: "Failed to set pasteboard: \(error.localizedDescription)")
+            }
+            // Cmd+V via System Events (layout-independent)
+            let script = "tell application \"Simulator\" to activate\ntell application \"System Events\" to keystroke \"v\" using command down"
+            _ = runCommand(["osascript", "-e", script])
+        } else {
+            let client = makeClient(udid: sim.udid)
+            do {
+                try client.type(text)
+            } catch {
+                Output.error(code: "TYPE_FAILED", message: "Type failed: \(error.localizedDescription)")
+            }
         }
 
         Output.success([
             "status": "ok",
-            "message": "Text typed.",
+            "message": paste ? "Text pasted." : "Text typed.",
             "text": text,
+            "method": paste ? "paste" : "hid",
+            "device": sim.name,
+            "udid": sim.udid
+        ] as [String: Any], pretty: pretty)
+    }
+}
+
+// MARK: - UIKey
+
+struct UIKey: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "key",
+        abstract: "Press a named key: return, escape, delete, tab."
+    )
+
+    static let keycodes: [String: UInt64] = [
+        "return": 0x28, "enter": 0x28,
+        "escape": 0x29, "esc":   0x29,
+        "delete": 0x2A, "backspace": 0x2A,
+        "tab":    0x2B
+    ]
+
+    @Argument(help: "Key name: return, escape, delete, tab.")
+    var name: String
+
+    @Option(name: .long, help: "Device UDID or name.")
+    var device: String?
+
+    @Flag(name: .long, help: "Pretty-print JSON output.")
+    var pretty: Bool = false
+
+    func run() throws {
+        guard let keycode = UIKey.keycodes[name.lowercased()] else {
+            Output.error(
+                code: "INVALID_KEY",
+                message: "Unknown key '\(name)'.",
+                suggestion: "Valid keys: return, escape, delete, tab"
+            )
+        }
+
+        let sim = DeviceResolver.resolve(identifier: device)
+        guard sim.isBooted else {
+            Output.error(
+                code: "DEVICE_NOT_BOOTED",
+                message: "Device '\(sim.name)' is not booted.",
+                suggestion: "Boot it with: iosdevctl device boot --device \"\(sim.name)\"",
+                exitCode: 4
+            )
+        }
+
+        let client = makeClient(udid: sim.udid)
+        do {
+            try client.pressKey(keycode: keycode)
+        } catch {
+            Output.error(code: "KEY_FAILED", message: "Key press failed: \(error.localizedDescription)")
+        }
+
+        Output.success([
+            "status": "ok",
+            "message": "Key pressed.",
+            "key": name.lowercased(),
             "device": sim.name,
             "udid": sim.udid
         ] as [String: Any], pretty: pretty)

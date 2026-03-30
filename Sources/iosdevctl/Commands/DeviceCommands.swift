@@ -246,6 +246,7 @@ struct DeviceRecordStart: ParsableCommand {
 
         let pid = process.processIdentifier
         writePidFile(pid: pid)
+        writePathFile(path: output)
 
         let payload: [String: Any] = [
             "status": "ok",
@@ -281,8 +282,10 @@ struct DeviceRecordStop: ParsableCommand {
         }
 
         // Send SIGINT to gracefully stop the recording (allows the video to be finalized)
+        let savedPath = readPathFile()
         let result = runCommand(["kill", "-SIGINT", "\(pid)"])
         deletePidFile()
+        deletePathFile()
 
         if !result.succeeded && result.exitCode != 1 {
             // Exit code 1 from kill means process not found — already stopped
@@ -293,11 +296,21 @@ struct DeviceRecordStop: ParsableCommand {
             )
         }
 
-        let payload: [String: Any] = [
+        // Wait briefly for simctl to finalize the file
+        Thread.sleep(forTimeInterval: 0.5)
+
+        var payload: [String: Any] = [
             "status": "ok",
             "message": "Recording stopped.",
             "pid": pid
         ]
+        if let path = savedPath {
+            payload["path"] = path
+            if let attrs = try? FileManager.default.attributesOfItem(atPath: path),
+               let size = attrs[.size] as? Int {
+                payload["size_bytes"] = size
+            }
+        }
         Output.success(payload, pretty: pretty)
     }
 }
@@ -318,4 +331,19 @@ private func writePidFile(pid: Int32) {
 
 private func deletePidFile() {
     try? FileManager.default.removeItem(atPath: recordingPidFile)
+}
+
+private let recordingPathFile = "/tmp/iosdevctl-recording-path.txt"
+
+private func writePathFile(path: String) {
+    try? path.write(toFile: recordingPathFile, atomically: true, encoding: .utf8)
+}
+
+private func readPathFile() -> String? {
+    try? String(contentsOfFile: recordingPathFile, encoding: .utf8)
+        .trimmingCharacters(in: .whitespacesAndNewlines)
+}
+
+private func deletePathFile() {
+    try? FileManager.default.removeItem(atPath: recordingPathFile)
 }
