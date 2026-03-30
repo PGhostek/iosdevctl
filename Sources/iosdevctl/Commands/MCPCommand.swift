@@ -82,14 +82,14 @@ private final class MCPServer {
         // device screenshot
         ToolDef(
             name: "device_screenshot",
-            description: "Take a screenshot and save it to a file.",
+            description: "Take a screenshot and save it to a file. Returns the path where the file was saved. Output path is optional — defaults to /tmp/iosdevctl-screenshot-<timestamp>.png.",
             inputSchema: [
                 "type": "object",
                 "properties": [
-                    "output": ["type": "string", "description": "Output file path (PNG)."],
+                    "output": ["type": "string", "description": "Output file path (PNG). Optional — auto-generated in /tmp if omitted."],
                     "device": ["type": "string", "description": "Device UDID or name."]
                 ] as [String: Any],
-                "required": ["output"]
+                "required": [] as [String]
             ],
             buildArgs: { p in
                 var args = ["device", "screenshot", "--pretty"]
