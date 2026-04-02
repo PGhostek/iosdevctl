@@ -42,3 +42,8 @@ func runCommand(_ args: [String]) -> ShellResult {
 func xcrun(_ args: [String]) -> ShellResult {
     return runCommand(["xcrun", "simctl"] + args)
 }
+
+@discardableResult
+func devicectl(_ args: [String]) -> ShellResult {
+    return runCommand(["xcrun", "devicectl"] + args)
+}
