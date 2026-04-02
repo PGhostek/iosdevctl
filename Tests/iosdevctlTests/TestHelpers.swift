@@ -15,6 +15,11 @@ struct CLIResult {
 
     var jsonDict: [String: Any]? { json as? [String: Any] }
     var jsonArray: [[String: Any]]? { json as? [[String: Any]] }
+
+    var stderrJsonDict: [String: Any]? {
+        guard let data = stderr.data(using: .utf8) else { return nil }
+        return (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+    }
 }
 
 /// Runs the iosdevctl binary with the given arguments.

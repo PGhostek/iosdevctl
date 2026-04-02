@@ -41,14 +41,14 @@ private final class MCPServer {
         // device list
         ToolDef(
             name: "device_list",
-            description: "List all available iOS simulators.",
+            description: "List all available iOS simulators and connected physical devices.",
             inputSchema: ["type": "object", "properties": [:] as [String: Any], "required": [] as [String]],
             buildArgs: { _ in ["device", "list", "--pretty"] }
         ),
         // device boot
         ToolDef(
             name: "device_boot",
-            description: "Boot a simulator by UDID or name.",
+            description: "Boot a simulator by UDID or name. Not applicable for physical devices — returns NOT_APPLICABLE_FOR_PHYSICAL error.",
             inputSchema: [
                 "type": "object",
                 "properties": [
@@ -65,7 +65,7 @@ private final class MCPServer {
         // device shutdown
         ToolDef(
             name: "device_shutdown",
-            description: "Shut down a booted simulator.",
+            description: "Shut down a booted simulator. Not applicable for physical devices — returns NOT_APPLICABLE_FOR_PHYSICAL error.",
             inputSchema: [
                 "type": "object",
                 "properties": [

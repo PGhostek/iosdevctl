@@ -4,7 +4,7 @@ import Foundation
 struct DeviceCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "device",
-        abstract: "Manage iOS simulators.",
+        abstract: "Manage iOS simulators and connected physical devices.",
         subcommands: [
             DeviceList.self,
             DeviceBoot.self,
@@ -20,16 +20,16 @@ struct DeviceCommand: ParsableCommand {
 struct DeviceList: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "list",
-        abstract: "List all available simulators."
+        abstract: "List all available simulators and connected physical devices."
     )
 
     @Flag(name: .long, help: "Pretty-print JSON output.")
     var pretty: Bool = false
 
     func run() throws {
-        let devices = DeviceResolver.listAll()
-        let output = devices.map { $0.toDictionary() }
-        Output.success(output, pretty: pretty)
+        let sims = DeviceResolver.listAll().map { $0.toDictionary() }
+        let physical = DeviceResolver.listPhysical().map { $0.toDictionary() }
+        Output.success(sims + physical, pretty: pretty)
     }
 }
 
@@ -48,6 +48,16 @@ struct DeviceBoot: ParsableCommand {
     var pretty: Bool = false
 
     func run() throws {
+        // Pre-flight: graceful error if this is a physical device
+        if let id = device, case .physical = DeviceResolver.resolveAny(identifier: id) {
+            Output.error(
+                code: "NOT_APPLICABLE_FOR_PHYSICAL",
+                message: "device boot is not applicable for physical devices. Physical devices boot themselves when powered on.",
+                suggestion: "Use 'iosdevctl device list' to see connected devices.",
+                exitCode: 1
+            )
+        }
+
         let sim = DeviceResolver.resolve(identifier: device)
 
         if sim.isBooted {
@@ -94,6 +104,16 @@ struct DeviceShutdown: ParsableCommand {
     var pretty: Bool = false
 
     func run() throws {
+        // Pre-flight: graceful error if this is a physical device
+        if let id = device, case .physical = DeviceResolver.resolveAny(identifier: id) {
+            Output.error(
+                code: "NOT_APPLICABLE_FOR_PHYSICAL",
+                message: "device shutdown is not applicable for physical devices.",
+                suggestion: "Power off the device manually or use 'iosdevctl device list' to see device state.",
+                exitCode: 1
+            )
+        }
+
         let sim = DeviceResolver.resolve(identifier: device)
 
         if sim.state == "Shutdown" {
@@ -143,34 +163,46 @@ struct DeviceScreenshot: ParsableCommand {
     var pretty: Bool = false
 
     func run() throws {
-        let sim = DeviceResolver.resolve(identifier: device)
-
-        if !sim.isBooted {
-            Output.error(
-                code: "DEVICE_NOT_BOOTED",
-                message: "Device \"\(sim.name)\" (\(sim.udid)) is not booted.",
-                suggestion: "Boot it first with: iosdevctl device boot --device \"\(sim.name)\"",
-                exitCode: 4
-            )
-        }
-
+        let deviceKind = DeviceResolver.resolveAny(identifier: device)
         let timestamp = Int(Date().timeIntervalSince1970)
         let outputPath = output ?? "/tmp/iosdevctl-screenshot-\(timestamp).png"
 
-        let result = xcrun(["io", sim.udid, "screenshot", outputPath])
-        if !result.succeeded {
-            Output.error(
-                code: "SCREENSHOT_FAILED",
-                message: result.stderr.isEmpty ? "Failed to take screenshot." : result.stderr,
-                suggestion: "Ensure the simulator is booted and the output path is writable."
-            )
+        switch deviceKind {
+        case .simulator(let sim):
+            if !sim.isBooted {
+                Output.error(
+                    code: "DEVICE_NOT_BOOTED",
+                    message: "Device \"\(sim.name)\" (\(sim.udid)) is not booted.",
+                    suggestion: "Boot it first with: iosdevctl device boot --device \"\(sim.name)\"",
+                    exitCode: 4
+                )
+            }
+            let result = xcrun(["io", sim.udid, "screenshot", outputPath])
+            if !result.succeeded {
+                Output.error(
+                    code: "SCREENSHOT_FAILED",
+                    message: result.stderr.isEmpty ? "Failed to take screenshot." : result.stderr,
+                    suggestion: "Ensure the simulator is booted and the output path is writable."
+                )
+            }
+
+        case .physical(let phys):
+            let result = devicectl(["device", "capture", "screenshot",
+                                    "--device-id", phys.udid, "--output", outputPath])
+            if !result.succeeded {
+                Output.error(
+                    code: "SCREENSHOT_FAILED",
+                    message: result.stderr.isEmpty ? "Failed to take screenshot." : result.stderr,
+                    suggestion: "Ensure the device is connected and trusted."
+                )
+            }
         }
 
         let payload: [String: Any] = [
             "status": "ok",
             "path": outputPath,
-            "device": sim.name,
-            "udid": sim.udid
+            "device": deviceKind.name,
+            "udid": deviceKind.udid
         ]
         Output.success(payload, pretty: pretty)
     }
@@ -207,6 +239,16 @@ struct DeviceRecordStart: ParsableCommand {
     var pretty: Bool = false
 
     func run() throws {
+        // Pre-flight: graceful error if this is a physical device
+        if let id = device, case .physical = DeviceResolver.resolveAny(identifier: id) {
+            Output.error(
+                code: "NOT_APPLICABLE_FOR_PHYSICAL",
+                message: "Screen recording is not supported on physical devices.",
+                suggestion: "Recording is currently only available for simulators.",
+                exitCode: 1
+            )
+        }
+
         let sim = DeviceResolver.resolve(identifier: device)
 
         if !sim.isBooted {
