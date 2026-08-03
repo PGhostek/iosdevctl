@@ -116,6 +116,24 @@ final class MCPServerTests: XCTestCase {
         XCTAssertFalse(text.contains("--bundle-id"), "bundle_id must be passed as positional arg, not --bundle-id flag")
     }
 
+    func test_toolsCall_serverLaunchedFromPATH_stillResolvesItsOwnBinary() {
+        // Regression: the server re-invoked itself via CommandLine.arguments[0].
+        // MCP clients launch it as `iosdevctl mcp serve` found on PATH, so argv[0]
+        // is the bare name "iosdevctl" — Process() then resolved it relative to the
+        // working directory and every single tool call failed with
+        // "The file “iosdevctl” doesn't exist."
+        let result = mcpRequestViaPATH("""
+            {"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"device_list","arguments":{}}}
+            """)
+        guard let res = result.jsonDict?["result"] as? [String: Any],
+              let text = (res["content"] as? [[String: Any]])?.first?["text"] as? String else {
+            return XCTFail("Expected result with content, got: \(result.stdout)")
+        }
+        XCTAssertFalse(text.contains("doesn’t exist") || text.contains("doesn't exist"),
+                       "Server failed to locate its own binary: \(text)")
+        XCTAssertEqual(res["isError"] as? Bool, false, "device_list should succeed: \(text)")
+    }
+
     func test_toolsCall_unknownDeviceName_isErrorTrue() {
         let result = mcpRequest("""
             {"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"device_boot","arguments":{"device":"NoSuchDevice-XYZ"}}}
