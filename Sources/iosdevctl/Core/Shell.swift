@@ -23,10 +23,25 @@ func runCommand(_ args: [String]) -> ShellResult {
         return ShellResult(stdout: "", stderr: error.localizedDescription, exitCode: 1)
     }
 
-    process.waitUntilExit()
+    // Drain both pipes concurrently BEFORE waiting for exit. Reading only after
+    // waitUntilExit() deadlocks as soon as the child writes more than the OS pipe
+    // buffer (~64 KB): the child blocks writing into a full pipe while we block
+    // waiting for it to exit. `simctl listapps` and `simctl list devices --json`
+    // both get there on a well-stocked Mac.
+    var stdoutData = Data()
+    var stderrData = Data()
+    let drainGroup = DispatchGroup()
+    let drainQueue = DispatchQueue(label: "iosdevctl.shell.drain", attributes: .concurrent)
 
-    let stdoutData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
-    let stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
+    drainQueue.async(group: drainGroup) {
+        stdoutData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
+    }
+    drainQueue.async(group: drainGroup) {
+        stderrData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
+    }
+
+    drainGroup.wait()
+    process.waitUntilExit()
 
     let stdout = String(data: stdoutData, encoding: .utf8) ?? ""
     let stderr = String(data: stderrData, encoding: .utf8) ?? ""
