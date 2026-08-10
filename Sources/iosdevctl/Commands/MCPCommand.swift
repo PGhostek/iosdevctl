@@ -554,9 +554,23 @@ private final class MCPServer {
 
     // MARK: - Subprocess
 
+    /// Absolute path of the running iosdevctl binary.
+    ///
+    /// `CommandLine.arguments[0]` is only a usable path when the caller happened to
+    /// spawn us with one. MCP clients launch `iosdevctl mcp serve` off PATH, in which
+    /// case argv[0] is the bare name "iosdevctl" and resolving it as a file path fails.
+    /// `Bundle.main.executablePath` is derived from the kernel's record of the image
+    /// (`_NSGetExecutablePath`), so it is correct regardless of how we were invoked.
+    private static var ownExecutablePath: String {
+        if let path = Bundle.main.executablePath, FileManager.default.isExecutableFile(atPath: path) {
+            return path
+        }
+        return CommandLine.arguments[0]
+    }
+
     private func invokeSubprocess(_ args: [String]) -> (String, Int32) {
         // Re-invoke the iosdevctl binary itself with the given args.
-        let execPath = CommandLine.arguments[0]
+        let execPath = MCPServer.ownExecutablePath
         let process = Process()
         process.executableURL = URL(fileURLWithPath: execPath)
         process.arguments = args

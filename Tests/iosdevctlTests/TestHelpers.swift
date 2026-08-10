@@ -50,14 +50,19 @@ func iosdevctl(_ args: String...) -> CLIResult {
     )
 }
 
-/// Pipes input into iosdevctl mcp serve and returns the response line.
-func mcpRequest(_ jsonLine: String) -> CLIResult {
-    let binaryPath = URL(fileURLWithPath: #filePath)
-        .deletingLastPathComponent()
-        .deletingLastPathComponent()
-        .deletingLastPathComponent()
+/// Absolute path to the debug binary under test.
+var iosdevctlBinaryPath: String {
+    URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent()   // iosdevctlTests/
+        .deletingLastPathComponent()   // Tests/
+        .deletingLastPathComponent()   // package root
         .appendingPathComponent(".build/debug/iosdevctl")
         .path
+}
+
+/// Pipes input into iosdevctl mcp serve and returns the response line.
+func mcpRequest(_ jsonLine: String) -> CLIResult {
+    let binaryPath = iosdevctlBinaryPath
 
     let process = Process()
     process.executableURL = URL(fileURLWithPath: binaryPath)
@@ -82,6 +87,42 @@ func mcpRequest(_ jsonLine: String) -> CLIResult {
     return CLIResult(
         stdout: stdout.trimmingCharacters(in: .whitespacesAndNewlines),
         stderr: stderr.trimmingCharacters(in: .whitespacesAndNewlines),
+        exitCode: process.terminationStatus
+    )
+}
+
+/// Same as `mcpRequest`, but launches the server the way an MCP client does when
+/// iosdevctl is installed on PATH: via `/usr/bin/env iosdevctl mcp serve`, so the
+/// server's own argv[0] is the bare name "iosdevctl" rather than an absolute path.
+func mcpRequestViaPATH(_ jsonLine: String) -> CLIResult {
+    let binaryDir = URL(fileURLWithPath: iosdevctlBinaryPath).deletingLastPathComponent().path
+
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+    process.arguments = ["iosdevctl", "mcp", "serve"]
+
+    var env = ProcessInfo.processInfo.environment
+    env["PATH"] = binaryDir + ":" + (env["PATH"] ?? "/usr/bin:/bin")
+    process.environment = env
+
+    let stdinPipe = Pipe()
+    let stdoutPipe = Pipe()
+    let stderrPipe = Pipe()
+    process.standardInput = stdinPipe
+    process.standardOutput = stdoutPipe
+    process.standardError = stderrPipe
+
+    try? process.run()
+    stdinPipe.fileHandleForWriting.write((jsonLine + "\n").data(using: .utf8)!)
+    stdinPipe.fileHandleForWriting.closeFile()
+    process.waitUntilExit()
+
+    let outString = String(data: stdoutPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+    let errString = String(data: stderrPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+
+    return CLIResult(
+        stdout: outString.trimmingCharacters(in: .whitespacesAndNewlines),
+        stderr: errString.trimmingCharacters(in: .whitespacesAndNewlines),
         exitCode: process.terminationStatus
     )
 }
