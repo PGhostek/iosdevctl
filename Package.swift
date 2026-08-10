@@ -32,6 +32,7 @@ let package = Package(
         ),
         .testTarget(
             name: "iosdevctlTests",
+            dependencies: ["iosdevctl"],
             path: "Tests/iosdevctlTests"
         )
     ]

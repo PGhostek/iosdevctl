@@ -112,7 +112,8 @@ enum DeviceResolver {
         )
     }
 
-    private static func runtimeName(from key: String) -> String {
+    // Internal (not private) so unit tests can exercise the parsing directly via @testable import.
+    static func runtimeName(from key: String) -> String {
         // "com.apple.CoreSimulator.SimRuntime.iOS-17-0" -> "iOS 17.0"
         let prefix = "com.apple.CoreSimulator.SimRuntime."
         var name = key
