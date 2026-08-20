@@ -570,27 +570,20 @@ private final class MCPServer {
 
     private func invokeSubprocess(_ args: [String]) -> (String, Int32) {
         // Re-invoke the iosdevctl binary itself with the given args.
-        let execPath = MCPServer.ownExecutablePath
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: execPath)
-        process.arguments = args
-
-        let stdoutPipe = Pipe()
-        let stderrPipe = Pipe()
-        process.standardOutput = stdoutPipe
-        process.standardError = stderrPipe
-
+        // captureProcessOutput drains both pipes before waiting for exit — a tool
+        // whose reply outgrows the ~64 KB pipe buffer (any real `ui tree` or
+        // `agent context` dump) would otherwise wedge this server forever, and the
+        // connected agent would wait on a tools/call that never returns.
         do {
-            try process.run()
-            process.waitUntilExit()
+            let output = try captureProcessOutput(
+                executable: MCPServer.ownExecutablePath,
+                arguments: args
+            )
+            let combined = String(data: output.stdout + output.stderr, encoding: .utf8) ?? ""
+            return (combined.trimmingCharacters(in: .whitespacesAndNewlines), output.exitCode)
         } catch {
             return ("{\"status\":\"error\",\"message\":\"\(error.localizedDescription)\"}", 1)
         }
-
-        let outData = stdoutPipe.fileHandleForReading.readDataToEndOfFile()
-        let errData = stderrPipe.fileHandleForReading.readDataToEndOfFile()
-        let output = String(data: outData + errData, encoding: .utf8) ?? ""
-        return (output.trimmingCharacters(in: .whitespacesAndNewlines), process.terminationStatus)
     }
 
     // MARK: - JSON-RPC response helpers
