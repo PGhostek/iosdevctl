@@ -443,8 +443,7 @@ struct UITree: ParsableCommand {
 
         let filtered: Any
         if query != nil || type != nil {
-            let elements = filterElements(rawTree, query: query, type: type)
-            filtered = elements
+            filtered = AccessibilityTree.filter(rawTree, query: query, type: type)
         } else {
             filtered = rawTree
         }
@@ -455,41 +454,6 @@ struct UITree: ParsableCommand {
             "udid": sim.udid,
             "elements": filtered
         ] as [String: Any], pretty: pretty)
-    }
-
-    /// Recursively collect elements matching the given query/type filters.
-    private func filterElements(_ node: Any, query: String?, type elementType: String?) -> [[String: Any]] {
-        var results: [[String: Any]] = []
-
-        func visit(_ obj: Any) {
-            if let dict = obj as? [String: Any] {
-                let label = (dict["AXLabel"] as? String) ?? ""
-                let value = (dict["AXValue"] as? String) ?? ""
-                let typeStr = (dict["type"] as? String) ?? ""
-
-                let matchesQuery = query.map { q in
-                    label.localizedCaseInsensitiveContains(q) ||
-                    value.localizedCaseInsensitiveContains(q)
-                } ?? true
-
-                let matchesType = elementType.map { t in
-                    typeStr.localizedCaseInsensitiveContains(t)
-                } ?? true
-
-                if matchesQuery && matchesType {
-                    results.append(dict)
-                }
-
-                if let children = dict["children"] as? [Any] {
-                    for child in children { visit(child) }
-                }
-            } else if let arr = obj as? [Any] {
-                for item in arr { visit(item) }
-            }
-        }
-
-        visit(node)
-        return results
     }
 }
 
