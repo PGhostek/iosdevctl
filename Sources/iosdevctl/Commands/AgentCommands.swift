@@ -312,7 +312,7 @@ struct AgentContext: ParsableCommand {
 
         let elements: Any
         if query != nil || type != nil {
-            elements = filterTree(rawTree, query: query, type: type)
+            elements = AccessibilityTree.filter(rawTree, query: query, type: type)
         } else {
             elements = rawTree
         }
@@ -324,34 +324,6 @@ struct AgentContext: ParsableCommand {
             "screenshot": screenshotPath,
             "elements": elements
         ] as [String: Any], pretty: pretty)
-    }
-
-    private func filterTree(_ node: Any, query: String?, type elementType: String?) -> [[String: Any]] {
-        var results: [[String: Any]] = []
-
-        func visit(_ obj: Any) {
-            if let dict = obj as? [String: Any] {
-                let label = (dict["AXLabel"] as? String) ?? ""
-                let value = (dict["AXValue"] as? String) ?? ""
-                let typeStr = (dict["type"] as? String) ?? ""
-
-                let matchesQuery = query.map {
-                    label.localizedCaseInsensitiveContains($0) || value.localizedCaseInsensitiveContains($0)
-                } ?? true
-                let matchesType = elementType.map { typeStr.localizedCaseInsensitiveContains($0) } ?? true
-
-                if matchesQuery && matchesType { results.append(dict) }
-
-                if let children = dict["children"] as? [Any] {
-                    for child in children { visit(child) }
-                }
-            } else if let arr = obj as? [Any] {
-                for item in arr { visit(item) }
-            }
-        }
-
-        visit(node)
-        return results
     }
 }
 
