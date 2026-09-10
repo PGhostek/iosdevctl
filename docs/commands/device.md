@@ -229,6 +229,7 @@ iosdevctl device record start --output <path> [--device <udid-or-name>] [--prett
 ### Notes
 
 - The recording PID is saved to `/tmp/iosdevctl-recording.pid` for use by `record stop`.
+- The PID file is validated against the running process before it is believed: if the recording died without a `record stop` (interrupted run, simulator shut down), the stale file is cleared and a new recording starts normally rather than reporting `RECORDING_ALREADY_IN_PROGRESS` forever.
 - Only one recording can be active at a time.
 - The simulator must be **booted**.
 
@@ -274,4 +275,4 @@ iosdevctl device record stop
 ### Notes
 
 - Sends `SIGINT` to the recording process to allow the video to be properly finalized before the process exits.
-- Errors if no recording is in progress.
+- Errors if no recording is in progress. A stale PID file counts as "no recording": the PID is checked to still be the simctl recording before any signal is sent, so a PID macOS has recycled onto an unrelated process is never signalled.

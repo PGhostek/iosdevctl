@@ -189,8 +189,6 @@ struct DeviceRecord: ParsableCommand {
     )
 }
 
-let recordingPidFile = "/tmp/iosdevctl-recording.pid"
-
 struct DeviceRecordStart: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "start",
@@ -218,8 +216,8 @@ struct DeviceRecordStart: ParsableCommand {
             )
         }
 
-        // Check if a recording is already in progress
-        if let existingPid = readPidFile() {
+        // Check if a recording is already in progress (stale pid files are cleared here)
+        if let existingPid = RecordingRegistry.activePid() {
             Output.error(
                 code: "RECORDING_ALREADY_IN_PROGRESS",
                 message: "A recording is already in progress (PID \(existingPid)).",
@@ -245,8 +243,8 @@ struct DeviceRecordStart: ParsableCommand {
         }
 
         let pid = process.processIdentifier
-        writePidFile(pid: pid)
-        writePathFile(path: output)
+        RecordingRegistry.writePid(pid)
+        RecordingRegistry.writePath(output)
 
         let payload: [String: Any] = [
             "status": "ok",
@@ -273,7 +271,7 @@ struct DeviceRecordStop: ParsableCommand {
     var pretty: Bool = false
 
     func run() throws {
-        guard let pid = readPidFile() else {
+        guard let pid = RecordingRegistry.activePid() else {
             Output.error(
                 code: "NO_RECORDING_IN_PROGRESS",
                 message: "No recording is currently in progress.",
@@ -282,10 +280,9 @@ struct DeviceRecordStop: ParsableCommand {
         }
 
         // Send SIGINT to gracefully stop the recording (allows the video to be finalized)
-        let savedPath = readPathFile()
+        let savedPath = RecordingRegistry.readPath()
         let result = runCommand(["kill", "-SIGINT", "\(pid)"])
-        deletePidFile()
-        deletePathFile()
+        RecordingRegistry.clear()
 
         if !result.succeeded && result.exitCode != 1 {
             // Exit code 1 from kill means process not found — already stopped
@@ -315,35 +312,85 @@ struct DeviceRecordStop: ParsableCommand {
     }
 }
 
-// MARK: - PID file helpers
+// MARK: - Recording registry
 
-private func readPidFile() -> Int32? {
-    guard let content = try? String(contentsOfFile: recordingPidFile, encoding: .utf8),
-          let pid = Int32(content.trimmingCharacters(in: .whitespacesAndNewlines)) else {
-        return nil
+/// Tracks the in-flight `simctl io … recordVideo` child across CLI invocations.
+///
+/// The pid file used to be trusted on sight: `record start` refused to run
+/// whenever the file existed, and `record stop` SIGINT'd whatever number it
+/// held. Nothing removed the file except a successful `stop`, so an interrupted
+/// agent run — or the simulator shutting down, which makes simctl exit on its
+/// own — left it behind indefinitely: `record start` then answered
+/// RECORDING_ALREADY_IN_PROGRESS forever, and the documented remedy
+/// (`record stop`) fired SIGINT at a PID macOS had long since recycled onto an
+/// unrelated process, then reported "Recording stopped."
+///
+/// So the pid file is now only believed when the PID is still alive AND the
+/// process is recognisably the recording we started.
+enum RecordingRegistry {
+    static var pidFilePath  = defaultPidFilePath
+    static var pathFilePath = defaultPathFilePath
+
+    static let defaultPidFilePath  = "/tmp/iosdevctl-recording.pid"
+    static let defaultPathFilePath = "/tmp/iosdevctl-recording-path.txt"
+
+    /// Command line of a running process, or nil when the PID is dead.
+    /// Injectable so tests don't need a real recording.
+    static var commandLineForPid: (Int32) -> String? = defaultCommandLineProbe
+
+    static let defaultCommandLineProbe: (Int32) -> String? = { pid in
+        let result = runCommand(["ps", "-p", "\(pid)", "-o", "command="])
+        guard result.succeeded else { return nil }
+        let line = result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
+        return line.isEmpty ? nil : line
     }
-    return pid
-}
 
-private func writePidFile(pid: Int32) {
-    try? "\(pid)".write(toFile: recordingPidFile, atomically: true, encoding: .utf8)
-}
+    /// A recycled PID is alive but is not ours — signalling it would hit an
+    /// innocent process, so require the simctl recording verb in the command line.
+    static func isLiveRecording(commandLine: String?) -> Bool {
+        guard let commandLine = commandLine else { return false }
+        return commandLine.contains("recordVideo")
+    }
 
-private func deletePidFile() {
-    try? FileManager.default.removeItem(atPath: recordingPidFile)
-}
+    /// PID of the recording actually in progress, or nil. Clears stale state on the way.
+    static func activePid() -> Int32? {
+        guard let pid = readPid() else { return nil }
+        guard isLiveRecording(commandLine: commandLineForPid(pid)) else {
+            clear()
+            return nil
+        }
+        return pid
+    }
 
-private let recordingPathFile = "/tmp/iosdevctl-recording-path.txt"
+    static func readPid() -> Int32? {
+        guard let content = try? String(contentsOfFile: pidFilePath, encoding: .utf8),
+              let pid = Int32(content.trimmingCharacters(in: .whitespacesAndNewlines)) else {
+            return nil
+        }
+        return pid
+    }
 
-private func writePathFile(path: String) {
-    try? path.write(toFile: recordingPathFile, atomically: true, encoding: .utf8)
-}
+    static func writePid(_ pid: Int32) {
+        try? "\(pid)".write(toFile: pidFilePath, atomically: true, encoding: .utf8)
+    }
 
-private func readPathFile() -> String? {
-    try? String(contentsOfFile: recordingPathFile, encoding: .utf8)
-        .trimmingCharacters(in: .whitespacesAndNewlines)
-}
+    static func readPath() -> String? {
+        try? String(contentsOfFile: pathFilePath, encoding: .utf8)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 
-private func deletePathFile() {
-    try? FileManager.default.removeItem(atPath: recordingPathFile)
+    static func writePath(_ path: String) {
+        try? path.write(toFile: pathFilePath, atomically: true, encoding: .utf8)
+    }
+
+    static func clear() {
+        try? FileManager.default.removeItem(atPath: pidFilePath)
+        try? FileManager.default.removeItem(atPath: pathFilePath)
+    }
+
+    /// Test hook — restores the real /tmp locations after a test redirects them.
+    static func resetPathsToDefaults() {
+        pidFilePath  = defaultPidFilePath
+        pathFilePath = defaultPathFilePath
+    }
 }
