@@ -27,7 +27,7 @@ iosdevctl status-bar override [--device <udid-or-name>] [--time <time>] [--batte
 | `--time` | string | Time to display (e.g. `"9:41"`) |
 | `--battery-level` | integer | Battery percentage, 0–100 |
 | `--battery-state` | string | `charging`, `charged`, or `discharging` |
-| `--network` | string | `wifi`, `lte`, `4g`, `3g`, `2g`, `edge`, `gprs`, or `none` |
+| `--network` | string | `wifi`, `3g`, `4g`, `lte`, `lte-a`, `lte+`, `5g`, `5g+`, `5g-uwb`, `5g-uc`, or `hide` (`none` is an alias) |
 | `--pretty` | flag | Pretty-print JSON output |
 
 ### Output

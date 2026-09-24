@@ -30,7 +30,7 @@ struct StatusBarOverride: ParsableCommand {
     @Option(name: .long, help: "Battery state (charging, charged, discharging).")
     var batteryState: String?
 
-    @Option(name: .long, help: "Network type (wifi, lte, 4g, 3g, 2g, edge, gprs, none).")
+    @Option(name: .long, help: "Network type (wifi, 3g, 4g, lte, lte-a, lte+, 5g, 5g+, 5g-uwb, 5g-uc, hide/none).")
     var network: String?
 
     @Flag(name: .long, help: "Pretty-print JSON output.")
@@ -48,45 +48,12 @@ struct StatusBarOverride: ParsableCommand {
             )
         }
 
-        var args = ["status_bar", sim.udid, "override"]
-
-        if let time = time {
-            args += ["--time", time]
-        }
-
-        if let batteryLevel = batteryLevel {
-            guard batteryLevel >= 0 && batteryLevel <= 100 else {
-                Output.error(
-                    code: "INVALID_ARGUMENT",
-                    message: "Battery level must be between 0 and 100.",
-                    suggestion: "Provide a value like --battery-level 85"
-                )
-            }
-            args += ["--batteryLevel", "\(batteryLevel)"]
-        }
-
-        if let batteryState = batteryState {
-            let validStates = ["charging", "charged", "discharging"]
-            guard validStates.contains(batteryState.lowercased()) else {
-                Output.error(
-                    code: "INVALID_ARGUMENT",
-                    message: "Battery state must be one of: \(validStates.joined(separator: ", ")).",
-                    suggestion: "Provide a value like --battery-state charging"
-                )
-            }
-            args += ["--batteryState", batteryState]
-        }
-
-        if let network = network {
-            let validNetworks = ["wifi", "lte", "4g", "3g", "2g", "edge", "gprs", "none"]
-            guard validNetworks.contains(network.lowercased()) else {
-                Output.error(
-                    code: "INVALID_ARGUMENT",
-                    message: "Network must be one of: \(validNetworks.joined(separator: ", ")).",
-                    suggestion: "Provide a value like --network wifi"
-                )
-            }
-            args += ["--dataNetwork", network]
+        let args: [String]
+        switch StatusBarArgs.build(time: time, batteryLevel: batteryLevel, batteryState: batteryState, network: network) {
+        case .success(let overrideArgs):
+            args = ["status_bar", sim.udid, "override"] + overrideArgs
+        case .failure(let invalid):
+            Output.error(code: "INVALID_ARGUMENT", message: invalid.message, suggestion: invalid.suggestion)
         }
 
         let result = xcrun(args)
@@ -112,6 +79,72 @@ struct StatusBarOverride: ParsableCommand {
             "udid": sim.udid
         ]
         Output.success(payload, pretty: pretty)
+    }
+}
+
+/// Validates `status-bar override` flags and maps them to simctl's override args.
+enum StatusBarArgs {
+    struct Invalid: Error, Equatable {
+        let message: String
+        let suggestion: String
+    }
+
+    static func build(
+        time: String?,
+        batteryLevel: Int?,
+        batteryState: String?,
+        network: String?
+    ) -> Result<[String], Invalid> {
+        var args: [String] = []
+
+        if let time = time {
+            args += ["--time", time]
+        }
+
+        if let batteryLevel = batteryLevel {
+            guard batteryLevel >= 0 && batteryLevel <= 100 else {
+                return .failure(Invalid(
+                    message: "Battery level must be between 0 and 100.",
+                    suggestion: "Provide a value like --battery-level 85"
+                ))
+            }
+            args += ["--batteryLevel", "\(batteryLevel)"]
+        }
+
+        if let batteryState = batteryState {
+            let state = batteryState.lowercased()
+            let validStates = ["charging", "charged", "discharging"]
+            guard validStates.contains(state) else {
+                return .failure(Invalid(
+                    message: "Battery state must be one of: \(validStates.joined(separator: ", ")).",
+                    suggestion: "Provide a value like --battery-state charging"
+                ))
+            }
+            args += ["--batteryState", state]
+        }
+
+        if let network = network {
+            // simctl's --dataNetwork values (`xcrun simctl help status_bar`); "none" is our alias for "hide".
+            let validNetworks = ["wifi", "3g", "4g", "lte", "lte-a", "lte+", "5g", "5g+", "5g-uwb", "5g-uc", "hide"]
+            let lowered = network.lowercased()
+            let value = lowered == "none" ? "hide" : lowered
+            guard validNetworks.contains(value) else {
+                return .failure(Invalid(
+                    message: "Network must be one of: \(validNetworks.joined(separator: ", ")), or none.",
+                    suggestion: "Provide a value like --network wifi"
+                ))
+            }
+            args += ["--dataNetwork", value]
+        }
+
+        guard !args.isEmpty else {
+            return .failure(Invalid(
+                message: "Specify at least one override.",
+                suggestion: "Provide e.g. --time 9:41, --battery-level, --battery-state, or --network"
+            ))
+        }
+
+        return .success(args)
     }
 }
 
