@@ -36,7 +36,8 @@ struct PasteboardGet: ParsableCommand {
             )
         }
 
-        let result = xcrun(["pbpaste", sim.udid])
+        // Untrimmed: stdout is the clipboard content, newlines included.
+        let result = xcrun(["pbpaste", sim.udid], trimNewlines: false)
         if !result.succeeded {
             Output.error(
                 code: "PASTEBOARD_GET_FAILED",
