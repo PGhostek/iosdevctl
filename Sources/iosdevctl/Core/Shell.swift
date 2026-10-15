@@ -7,7 +7,9 @@ struct ShellResult {
     var succeeded: Bool { exitCode == 0 }
 }
 
-func runCommand(_ args: [String]) -> ShellResult {
+/// `trimNewlines` strips surrounding newlines from stdout/stderr — right for
+/// simctl status output, wrong when stdout IS the data (e.g. `pbpaste`).
+func runCommand(_ args: [String], trimNewlines: Bool = true) -> ShellResult {
     let process = Process()
     let stdoutPipe = Pipe()
     let stderrPipe = Pipe()
@@ -47,13 +49,13 @@ func runCommand(_ args: [String]) -> ShellResult {
     let stderr = String(data: stderrData, encoding: .utf8) ?? ""
 
     return ShellResult(
-        stdout: stdout.trimmingCharacters(in: .newlines),
+        stdout: trimNewlines ? stdout.trimmingCharacters(in: .newlines) : stdout,
         stderr: stderr.trimmingCharacters(in: .newlines),
         exitCode: process.terminationStatus
     )
 }
 
 @discardableResult
-func xcrun(_ args: [String]) -> ShellResult {
-    return runCommand(["xcrun", "simctl"] + args)
+func xcrun(_ args: [String], trimNewlines: Bool = true) -> ShellResult {
+    return runCommand(["xcrun", "simctl"] + args, trimNewlines: trimNewlines)
 }

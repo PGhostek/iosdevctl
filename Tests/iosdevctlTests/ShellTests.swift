@@ -100,6 +100,31 @@ final class ShellTests: XCTestCase {
         XCTAssertNotEqual(result.exitCode, 0)
         XCTAssertFalse(result.succeeded)
     }
+
+    // MARK: - Newline trimming
+    //
+    // `pasteboard get` returns `simctl pbpaste` stdout as the clipboard content.
+    // The default trim ate leading/trailing newlines, so a copied code block or
+    // multi-line value came back altered and an agent's exact-match check failed.
+
+    func test_runCommand_trimsSurroundingNewlinesByDefault() {
+        let result = runWithTimeout(["printf", "\\n\\nabc\\n\\n"])
+
+        guard let result = result else { return }
+        XCTAssertEqual(result.stdout, "abc")
+    }
+
+    func test_runCommand_trimNewlinesFalse_preservesStdoutExactly() {
+        let done = expectation(description: "runCommand returned")
+        let box = ResultBox()
+        DispatchQueue.global(qos: .userInitiated).async {
+            box.set(runCommand(["printf", "\\n line one\\nline two\\n\\n"], trimNewlines: false))
+            done.fulfill()
+        }
+        wait(for: [done], timeout: 30)
+
+        XCTAssertEqual(box.get()?.stdout, "\n line one\nline two\n\n")
+    }
 }
 
 /// Tiny lock-guarded box so the background result crosses queues safely.
