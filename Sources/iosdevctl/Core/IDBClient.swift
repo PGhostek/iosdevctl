@@ -105,6 +105,11 @@ final class IDBClient {
         process.arguments = ["--udid", udid, "--grpc-port", "\(grpcPort)"]
         process.standardOutput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice
+        if let shimDev = XcodeShim.companionDeveloperDir() {
+            var env = ProcessInfo.processInfo.environment
+            env["DEVELOPER_DIR"] = shimDev
+            process.environment = env
+        }
 
         do {
             try process.run()
@@ -132,6 +137,9 @@ final class IDBClient {
 
     /// Brings the Simulator app to the foreground so HID events are received.
     private static func activateSimulator() {
+        // Xcode 27 has no Simulator.app; asking AppleScript for it can pop a
+        // "Where is Simulator?" dialog. HID events work without focus there.
+        guard XcodeShim.hasSimulatorApp() else { return }
         _ = runCommand(["osascript", "-e", "tell application \"Simulator\" to activate"])
         Thread.sleep(forTimeInterval: 0.3)
     }

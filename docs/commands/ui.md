@@ -4,6 +4,8 @@ UI interaction and inspection commands — tap, swipe, type text, press hardware
 
 All commands connect to `idb_companion`'s gRPC API. `idb_companion` is managed automatically — it starts if not running, and restarts if running for a different UDID.
 
+**Xcode 27+:** Xcode 27 moved `SimulatorKit.framework` to `Contents/SharedFrameworks/` and dropped `Simulator.app`, which breaks `idb_companion` 1.1.8 ("SimulatorKit is required for HID interactions"). iosdevctl handles this automatically: it builds a symlink mirror of `Xcode.app/Contents` at `~/.iosdevctl/xcode-shim/<Xcode build>/` that exposes SimulatorKit at the old path, and starts `idb_companion` with `DEVELOPER_DIR` pointing into the mirror. Xcode.app itself is never modified. On Xcode 27, the Simulator focus step before HID events is skipped because there is no Simulator.app to focus.
+
 ## Subcommands
 
 | Subcommand | Description |
