@@ -92,16 +92,8 @@ enum DeviceResolver {
             )
         }
 
-        // Match by name — prefer booted, then first available
-        let nameMatches = all.filter { $0.name.lowercased() == identifier.lowercased() }
-        if let booted = nameMatches.first(where: { $0.isBooted }) {
-            return booted
-        }
-        if let available = nameMatches.first(where: { $0.available }) {
-            return available
-        }
-        if let any = nameMatches.first {
-            return any
+        if let device = match(name: identifier, in: all) {
+            return device
         }
 
         Output.error(
@@ -110,6 +102,18 @@ enum DeviceResolver {
             suggestion: "Run 'iosdevctl device list' to see available simulators.",
             exitCode: 2
         )
+    }
+
+    /// Name lookup: booted beats available beats unavailable; ties go to the newest runtime.
+    /// `listAll()` iterates a Dictionary, whose order changes every process, so without the
+    /// runtime tie-break a name present on two runtimes resolved to a random one each run.
+    static func match(name: String, in devices: [SimulatorDevice]) -> SimulatorDevice? {
+        let matches = devices
+            .filter { $0.name.lowercased() == name.lowercased() }
+            .sorted { $0.runtime.compare($1.runtime, options: .numeric) == .orderedDescending }
+        return matches.first(where: { $0.isBooted })
+            ?? matches.first(where: { $0.available })
+            ?? matches.first
     }
 
     // Internal (not private) so unit tests can exercise the parsing directly via @testable import.
