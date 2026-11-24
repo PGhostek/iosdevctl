@@ -184,9 +184,10 @@ struct UIType: ParsableCommand {
             pbcopy.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
             pbcopy.arguments = ["simctl", "pbcopy", sim.udid]
             let stdinPipe = Pipe()
+            let stderrPipe = Pipe()
             pbcopy.standardInput = stdinPipe
             pbcopy.standardOutput = FileHandle.nullDevice
-            pbcopy.standardError = FileHandle.nullDevice
+            pbcopy.standardError = stderrPipe
             do {
                 try pbcopy.run()
                 stdinPipe.fileHandleForWriting.write(text.data(using: .utf8)!)
@@ -195,9 +196,18 @@ struct UIType: ParsableCommand {
             } catch {
                 Output.error(code: "TYPE_FAILED", message: "Failed to set pasteboard: \(error.localizedDescription)")
             }
+            let pbcopyStderr = String(data: stderrPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+            let pbcopyResult = ShellResult(stdout: "", stderr: pbcopyStderr.trimmingCharacters(in: .whitespacesAndNewlines),
+                                           exitCode: pbcopy.terminationStatus)
+            if let f = PasteTyping.failure(pbcopy: pbcopyResult, keystroke: nil) {
+                Output.error(code: f.code, message: f.message, suggestion: f.suggestion)
+            }
             // Cmd+V via System Events (layout-independent)
             let script = "tell application \"Simulator\" to activate\ntell application \"System Events\" to keystroke \"v\" using command down"
-            _ = runCommand(["osascript", "-e", script])
+            let keystroke = runCommand(["osascript", "-e", script])
+            if let f = PasteTyping.failure(pbcopy: pbcopyResult, keystroke: keystroke) {
+                Output.error(code: f.code, message: f.message, suggestion: f.suggestion)
+            }
         } else {
             let client = makeClient(udid: sim.udid)
             do {
